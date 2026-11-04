@@ -1,0 +1,23 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 viewBox="0 0 708.661 498.898">
+<g fill="#231F20">
+	<g>
+		<line fill="none" stroke="#231F20" stroke-miterlimit="10" x1="708.66" y1="174.611" x2="0" y2="174.611"/>
+		<line fill="none" stroke="#231F20" stroke-miterlimit="10" x1="708.66" y1="195.521" x2="0" y2="195.521"/>
+		<line fill="none" stroke="#231F20" stroke-miterlimit="10" x1="708.66" y1="216.421" x2="0" y2="216.421"/>
+		<line fill="none" stroke="#231F20" stroke-miterlimit="10" x1="449.194" y1="237.321" x2="0" y2="237.321"/>
+		<line fill="none" stroke="#231F20" stroke-miterlimit="10" x1="708.66" y1="237.321" x2="632.161" y2="237.321"/>
+		<line fill="none" stroke="#231F20" stroke-miterlimit="10" x1="708.66" y1="258.231" x2="0" y2="258.231"/>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#231F20" stroke-miterlimit="10" x1="329.424" y1="174.414" x2="329.375" y2="258.231"/>
+			
+				<rect x="323.3" y="174.413" transform="matrix(-1 5.922268e-04 -5.922268e-04 -1 649.3139 432.4518)" width="2.587" height="83.817"/>
+		</g>
+		<circle cx="337.633" cy="206.46" r="3.314"/>
+		<circle cx="337.633" cy="226.777" r="3.314"/>
+	</g>
+</g>
+<line fill="none" stroke="#231F20" stroke-miterlimit="10" x1="449.194" y1="237.321" x2="456.578" y2="237.321"/>
+</svg>
