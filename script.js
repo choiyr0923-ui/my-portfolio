@@ -14,9 +14,10 @@
   }
 })();
 
-// Iris reveal, Cover → Category. The first downward scroll on the cover is held for 600ms
-// while the real category section, lifted over the cover with a transform, shows through a
-// circle growing from the centre of the viewport. At the end the page is scrolled to the
+// Iris reveal, Cover → Category. When the category starts to scroll in from below (detected
+// with an IntersectionObserver, so trackpad, wheel, keys, scrollbar and touch all count), the
+// real category section is lifted over the cover with a transform and shown through a circle
+// growing from the centre of the viewport for 600ms. At the end the page is scrolled to the
 // category and the transform is removed in the same frame, so layout is never changed.
 (function () {
   var root = document.documentElement;
@@ -24,11 +25,12 @@
   var section = document.querySelector(".category");
   var canvas = section && section.querySelector(".category__canvas");
   var DURATION = 600;            // ms
-  var EMPTY_TOP_BAND = 20;       // pt: top band of the category artboard that holds no content
-  var SCROLL_KEYS = ["ArrowDown", "PageDown", " ", "Spacebar"];
-  var LOCK_KEYS = SCROLL_KEYS.concat(["ArrowUp", "PageUp", "Home", "End"]);
+  var LOCK_KEYS = ["ArrowDown", "ArrowUp", "PageDown", "PageUp", " ", "Spacebar", "Home", "End"];
 
-  if (!section || !canvas || !window.requestAnimationFrame) return;
+  if (!section || !canvas || !window.requestAnimationFrame || !("IntersectionObserver" in window)) {
+    console.info("[iris] skipped: required browser features are missing");
+    return;
+  }
   if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   // CSS "ease-in-out" = cubic-bezier(0.42, 0, 0.58, 1)
@@ -42,33 +44,41 @@
     return 3 * (1 - s) * s * s + s * s * s;
   };
 
-  var state = "idle";   // idle → playing → done
-  var touchStartY = null;
+  // idle → playing → done → (back on the cover) idle …; "failed" after an error stays off
+  var state = "idle";
+  var observer;
 
-  // How much of the category is already on screen below the cover (px, negative = below the fold)
-  var visiblePart = function () {
-    return window.innerHeight - section.getBoundingClientRect().top;
+  // Only during the 600ms: keep the page still where the browser lets us (cancelable events).
+  // Where it does not (e.g. Safari trackpad momentum), the lifted section follows the scroll.
+  var holdScroll = function (event) {
+    if (event.cancelable) event.preventDefault();
   };
-  // Plain black top of the section: the band above the centred stage plus the artboard's empty
-  // top edge. While no more than this is visible, lifting the section changes nothing on screen.
-  var emptyTop = function () {
-    var canvasRect = canvas.getBoundingClientRect();
-    return canvasRect.top - section.getBoundingClientRect().top + canvasRect.width / 708.661 * EMPTY_TOP_BAND;
+  var holdKeys = function (event) {
+    if (LOCK_KEYS.indexOf(event.key) !== -1 && event.cancelable) event.preventDefault();
   };
-  var canStart = function () {
-    return state === "idle" && visiblePart() <= emptyTop();
+  var addHold = function () {
+    window.addEventListener("wheel", holdScroll, { passive: false });
+    window.addEventListener("touchmove", holdScroll, { passive: false });
+    window.addEventListener("keydown", holdKeys);
+  };
+  var removeHold = function () {
+    window.removeEventListener("wheel", holdScroll);
+    window.removeEventListener("touchmove", holdScroll);
+    window.removeEventListener("keydown", holdKeys);
   };
 
-  var cleanUp = function () {
-    window.removeEventListener("wheel", onWheel);
-    window.removeEventListener("touchstart", onTouchStart);
-    window.removeEventListener("touchmove", onTouchMove);
-    window.removeEventListener("keydown", onKeyDown);
-    window.removeEventListener("scroll", onScroll);
+  // Back to the normal page, whatever happened
+  var reset = function () {
+    section.style.transform = "";
+    section.style.clipPath = "";
+    body.style.backgroundImage = "";
+    root.classList.remove("iris-playing");
+    removeHold();
   };
 
   var play = function () {
     state = "playing";
+    addHold();
     root.classList.add("iris-playing");
 
     var viewW = section.clientWidth;
@@ -89,70 +99,61 @@
 
     var frame = function (now) {
       if (state !== "playing") return;
-      if (start === null) start = now;
-      var progress = Math.min((now - start) / DURATION, 1);
-      if (progress >= 1) {
-        // Same frame: real scroll position replaces the transform
-        window.scrollTo(0, docTop - targetTop);
-        section.style.transform = "";
-        section.style.clipPath = "";
-        body.style.backgroundImage = "";
-        root.classList.remove("iris-playing");
-        state = "done";
-        cleanUp();
-        return;
+      try {
+        if (start === null) start = now;
+        var progress = Math.min((now - start) / DURATION, 1);
+        if (progress >= 1) {
+          // Same frame: real scroll position replaces the transform
+          window.scrollTo(0, docTop - targetTop);
+          reset();
+          state = "done";
+          return;
+        }
+        var shift = targetTop - (docTop - window.pageYOffset);
+        section.style.transform = "translateY(" + shift + "px)";
+        section.style.clipPath =
+          "circle(" + (easeInOut(progress) * maxRadius).toFixed(2) + "px at " + cx + "px " + cy + "px)";
+        requestAnimationFrame(frame);
+      } catch (error) {
+        console.error("[iris] animation stopped, page restored:", error);
+        reset();
+        state = "failed";
       }
-      var shift = targetTop - (docTop - window.pageYOffset);
-      section.style.transform = "translateY(" + shift + "px)";
-      section.style.clipPath =
-        "circle(" + (easeInOut(progress) * maxRadius).toFixed(2) + "px at " + cx + "px " + cy + "px)";
-      requestAnimationFrame(frame);
     };
     // First frame right away (radius 0), so the lifted section never shows unclipped
     frame(performance.now());
   };
 
-  // Hold the page still while the circle grows; start on the first downward scroll intent
-  var onWheel = function (event) {
-    if (state === "playing") {
-      event.preventDefault();
-    } else if (event.deltaY > 0 && canStart()) {
-      event.preventDefault();
-      play();
-    }
-  };
-  var onTouchStart = function (event) {
-    touchStartY = event.touches[0].clientY;
-  };
-  var onTouchMove = function (event) {
-    if (state === "playing") {
-      event.preventDefault();
-    } else if (touchStartY !== null && touchStartY - event.touches[0].clientY > 6 && canStart()) {
-      event.preventDefault();
-      play();
-    }
-  };
-  var onKeyDown = function (event) {
-    if (event.target !== body && event.target !== root) return;
-    if (state === "playing" && LOCK_KEYS.indexOf(event.key) !== -1) {
-      event.preventDefault();
-    } else if (!event.shiftKey && SCROLL_KEYS.indexOf(event.key) !== -1 && canStart()) {
-      event.preventDefault();
-      play();
-    }
-  };
-  // Reached the category some other way (scrollbar, link): leave it as it is
-  var onScroll = function () {
-    if (state === "idle" && visiblePart() > emptyTop()) {
-      state = "done";
-      cleanUp();
+  // Back on the cover: the category is out of view again (or the page is at the very top, for
+  // mobile toolbars that change the viewport height). Only then can the reveal run again, so
+  // scrolling up through the category, or turning back halfway, never replays it.
+  var rearm = function () {
+    if (state !== "done") return;
+    if (window.pageYOffset <= 0 || section.getBoundingClientRect().top >= window.innerHeight - 1) {
+      state = "idle";
     }
   };
 
-  window.addEventListener("wheel", onWheel, { passive: false });
-  window.addEventListener("touchstart", onTouchStart, { passive: true });
-  window.addEventListener("touchmove", onTouchMove, { passive: false });
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("scroll", onScroll, { passive: true });
-  onScroll();
+  // Start when the category enters from below the fold. The root is shrunk by 1px at the bottom
+  // so a section that only touches the fold does not count; small thresholds catch the first pixels.
+  try {
+    observer = new IntersectionObserver(function (entries) {
+      var entry = entries[entries.length - 1];
+      rearm();
+      if (state !== "idle" || !entry.isIntersecting) return;
+      if (entry.boundingClientRect.top > 0 && window.pageYOffset > 0) {
+        try {
+          play();
+        } catch (error) {
+          console.error("[iris] could not start, page left as is:", error);
+          reset();
+          state = "failed";
+        }
+      }
+    }, { rootMargin: "0px 0px -1px 0px", threshold: [0, 0.01, 0.02, 0.05, 0.1, 0.2] });
+    observer.observe(section);
+    window.addEventListener("scroll", rearm, { passive: true });
+  } catch (error) {
+    console.error("[iris] setup failed, page left as is:", error);
+  }
 })();
