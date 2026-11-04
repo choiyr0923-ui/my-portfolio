@@ -31,14 +31,16 @@ body {
 
 /* Page row: full width (excluding any scrollbar), so 100cqw is the usable width */
 .cover,
-.about {
+.about,
+.category {
   container-type: inline-size;
   width: 100%;
 }
 
 /* Stage: fits the page width and viewport height, keeping the 250:176 artboard ratio */
 .cover__canvas,
-.about__canvas {
+.about__canvas,
+.category__canvas {
   --stage-w: min(100cqw, 100svh * 708.661 / 498.898);
   --pt: calc(var(--stage-w) / var(--artboard-w));
   position: relative;
@@ -161,9 +163,77 @@ body {
   font-weight: 700;
 }
 
+/*
+ * Category 03 — 포폴 표지_최유리(검정)_03.psd (same artboard size, black background)
+ * Images use the same inline --x / --y / --w / --h (pt) as the about page.
+ * Encho / Magreb / Neutiva / The Foriene Serif text is outlined in Illustrator.
+ */
+.category {
+  --color-category-bg: #000105;   /* C40 M30 Y30 K100 */
+  background: var(--color-category-bg);
+}
+
+.category__canvas {
+  background: var(--color-category-bg);
+  color: #ffffff;
+}
+
+.category__canvas ul {
+  list-style: none;
+}
+
+.category__item {
+  position: absolute;
+  left: calc(var(--x) * var(--pt));
+  top: calc(var(--y) * var(--pt));
+  width: calc(var(--w) * var(--pt));
+  height: calc(var(--h) * var(--pt));
+  display: block;
+}
+
+/* Pretendard 8pt, centered on x 356.46pt */
+.category__lead,
+.category__statement {
+  position: absolute;
+  left: calc(356.46 * var(--pt));
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  font-size: calc(8 * var(--pt));
+  letter-spacing: -0.02em;   /* tracking -20 */
+}
+
+/* ExtraBold, baseline 143.67pt */
+.category__lead {
+  top: calc(136.826 * var(--pt));
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Regular, leading 11pt, first baseline 174.96pt, one empty line between paragraphs */
+.category__statement {
+  top: calc(166.616 * var(--pt));
+  font-weight: 400;
+  line-height: calc(11 * var(--pt));
+}
+
+/* One block per line with a fixed 11pt height, so line spacing does not drift
+   (WebKit rounds line box heights to whole pixels) */
+.category__statement span {
+  display: block;
+  height: calc(11 * var(--pt));
+}
+
+.category__statement p + p {
+  margin-top: calc(11 * var(--pt));
+}
+
 /* Hide text until fonts are ready to avoid a fallback-font flash */
 html:not(.fonts-ready) .cover__desc,
 html:not(.fonts-ready) .about__text,
-html:not(.fonts-ready) .about__intro {
+html:not(.fonts-ready) .about__intro,
+html:not(.fonts-ready) .category__lead,
+html:not(.fonts-ready) .category__statement {
   visibility: hidden;
 }
