@@ -37,6 +37,17 @@ body {
   width: 100%;
 }
 
+/* Cover and category fill at least one screen, stage centred, so the category always starts
+   below the fold and the iris reveal (script.js) can open over the whole cover on any window.
+   Extra height shows the page's own background (white cover, black category). */
+.cover,
+.category {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100svh;
+}
+
 /* Stage: fits the page width and viewport height, keeping the 250:176 artboard ratio */
 .cover__canvas,
 .about__canvas,
@@ -227,6 +238,14 @@ body {
 
 .category__statement p + p {
   margin-top: calc(11 * var(--pt));
+}
+
+/* Iris reveal (script.js): only while it plays, the category section is lifted above the
+   cover (transform and clip-path are set inline); neither affects layout */
+html.iris-playing .category {
+  position: relative;
+  z-index: 1;
+  will-change: transform, clip-path;
 }
 
 /* Hide text until fonts are ready to avoid a fallback-font flash */
