@@ -21,35 +21,30 @@
   padding: 0;
 }
 
-html,
+/* Pages (cover, about) stack directly, each as tall as its stage */
 body {
-  height: 100%;
-}
-
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100svh;
   background: var(--color-bg);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
-/* Stage: fits the viewport while keeping the 250:176 artboard ratio */
-.cover {
+/* Page row: full width (excluding any scrollbar), so 100cqw is the usable width */
+.cover,
+.about {
   container-type: inline-size;
-  flex: none;
-  width: min(100vw, 100svh * 708.661 / 498.898);
-  height: min(100svh, 100vw * 498.898 / 708.661);
+  width: 100%;
 }
 
-.cover__canvas {
-  --pt: calc(100cqw / var(--artboard-w));
+/* Stage: fits the page width and viewport height, keeping the 250:176 artboard ratio */
+.cover__canvas,
+.about__canvas {
+  --stage-w: min(100cqw, 100svh * 708.661 / 498.898);
+  --pt: calc(var(--stage-w) / var(--artboard-w));
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: var(--stage-w);
+  height: calc(var(--stage-w) * 498.898 / 708.661);
+  margin-inline: auto;
   overflow: hidden;
 }
 
@@ -91,7 +86,84 @@ body {
   word-break: keep-all;
 }
 
+/*
+ * About 02 — 포폴 표지_최유리(검정)_02.psd (same artboard size as the cover)
+ * Each element carries its artboard position in pt as inline custom properties:
+ *   images: --x, --y = top-left, --w, --h = size
+ *   text:   --x, --y = Illustrator text anchor (left edge, baseline)
+ * Neutiva / The Foriene Serif text is outlined in Illustrator (SVG with alt text).
+ */
+:root {
+  --color-rich-black: #010101;
+  --color-card: #e7e8e9;       /* K 9.77% */
+}
+
+.about__canvas ol,
+.about__canvas ul {
+  list-style: none;
+}
+
+.about__item {
+  position: absolute;
+  left: calc(var(--x) * var(--pt));
+  top: calc(var(--y) * var(--pt));
+  width: calc(var(--w) * var(--pt));
+  height: calc(var(--h) * var(--pt));
+  display: block;
+}
+
+/* Profile card: 307.771pt square, corner radius 11.539pt */
+.about__card {
+  position: absolute;
+  left: calc(384.811 * var(--pt));
+  top: calc(40.649 * var(--pt));
+  width: calc(307.771 * var(--pt));
+  height: calc(307.771 * var(--pt));
+  border-radius: calc(11.539 * var(--pt));
+  background: var(--color-card);
+}
+
+/* Pretendard text, single line. With line-height 1 the baseline sits .855em
+   below the top of the line box. The source text is rotated 0.3° around its anchor. */
+.about__text {
+  position: absolute;
+  left: calc(var(--x) * var(--pt));
+  top: calc((var(--y) - var(--fs) * 0.85547) * var(--pt));
+  font-family: var(--font-sans);
+  font-size: calc(var(--fs) * var(--pt));
+  line-height: 1;
+  letter-spacing: -0.02em;   /* tracking -20 */
+  white-space: nowrap;
+  transform: rotate(-0.3deg);
+  transform-origin: 0 0.85547em;
+}
+
+.about__text--heading { --fs: 8; font-weight: 700; }        /* Bold 8pt */
+.about__text--body { --fs: 7; font-weight: 300; }           /* Light 7pt */
+.about__text--caption { --fs: 6; font-weight: 300; }        /* Light 6pt */
+.about__text--caption-bold { --fs: 6; font-weight: 700; }   /* Bold 6pt */
+
+/* "디자이너 / 최유리입니다." Light + Bold 14pt, leading 21pt,
+   first baseline 213.7pt at 396.23pt (not rotated) */
+.about__intro {
+  position: absolute;
+  left: calc(396.23 * var(--pt));
+  top: calc(198.223 * var(--pt));
+  font-family: var(--font-sans);
+  font-size: calc(14 * var(--pt));
+  font-weight: 300;
+  line-height: calc(21 * var(--pt));
+  white-space: nowrap;
+  color: var(--color-rich-black);
+}
+
+.about__intro strong {
+  font-weight: 700;
+}
+
 /* Hide text until fonts are ready to avoid a fallback-font flash */
-html:not(.fonts-ready) .cover__desc {
+html:not(.fonts-ready) .cover__desc,
+html:not(.fonts-ready) .about__text,
+html:not(.fonts-ready) .about__intro {
   visibility: hidden;
 }
