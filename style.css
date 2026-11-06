@@ -451,3 +451,75 @@ html:not(.fonts-ready) .category__statement {
     scale: 1.03;
   }
 }
+
+/*
+ * About Me circle — the two large rings rotate: outer clockwise 35 s, inner counter-clockwise 45 s
+ * about-graphic.svg is split without changing any curve, line weight or colour:
+ *   about-graphic-static.svg  fixed — short dashes, horizontal lines, centre brackets, circle and dot
+ *   about-ring-outer.svg      #5 #7 #8 (outer ring)
+ *   about-ring-inner.svg      the circle part of #6 (inner ring), cut from the horizontal lines at
+ *                             their existing anchor points
+ * All three keep the original viewBox and position, so at rest they match about-graphic.svg.
+ * The rings are not perfect circles; each turns about the centre where its arcs are most nearly
+ * round (svg px: outer 520.131, 499.231 / inner 521.431, 498.231). The graphic's own centre (#13)
+ * is 523.181, 501.631 — to turn both about it, set both transform-origins to 55.5765% 50.6268%.
+ * .about__rings is a 1080px square centred on the graphic, in the same units as the graphic. It
+ * is clipped by a vector clip-path (#about-ring-clip in index.html, objectBoundingBox units, so
+ * it scales with the graphic): the whole square minus one block around each category label —
+ * the label's text lines (measured from about-category-0*.svg) plus 12px on every side, with the
+ * space between the lines filled. A rotating line is shown or hidden with a sharp edge, never
+ * faded. At rest every original line is at least 7.9px outside these blocks, so nothing is
+ * hidden. The clip does not rotate and applies to the two rings only.
+ */
+.about__rings {
+  pointer-events: none;
+  -webkit-clip-path: url(#about-ring-clip);
+  clip-path: url(#about-ring-clip);
+}
+
+.about__rings-clip {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.about__ring {
+  position: absolute;
+  left: calc(16.819 * var(--u));
+  top: calc(38.369 * var(--u));
+  width: calc(941.379 * var(--u));
+  height: calc(990.841 * var(--u));
+  display: block;
+}
+
+.about__ring--outer {
+  transform-origin: 55.2525% 50.3846%;
+}
+
+.about__ring--inner {
+  transform-origin: 55.3906% 50.2837%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .about__ring--outer {
+    animation: about-ring-cw 35s linear infinite;
+  }
+
+  .about__ring--inner {
+    animation: about-ring-ccw 45s linear infinite;
+  }
+
+  /* Paused while About Me is off screen (set by script.js) */
+  .about.is-offscreen .about__ring {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes about-ring-cw {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes about-ring-ccw {
+  to { transform: rotate(-360deg); }
+}

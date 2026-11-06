@@ -134,3 +134,13 @@
     visible = true;
   }
 })();
+
+// About Me rings: pause the rotation while the section is off screen
+(function () {
+  var section = document.querySelector(".about");
+  if (!section || !document.querySelector(".about__ring") || !("IntersectionObserver" in window)) return;
+  section.classList.add("is-offscreen");
+  new IntersectionObserver(function (entries) {
+    section.classList.toggle("is-offscreen", !entries[entries.length - 1].isIntersecting);
+  }).observe(section);
+})();
