@@ -360,3 +360,85 @@ html:not(.fonts-ready) .category__statement {
     margin-top: 0;
   }
 }
+
+/*
+ * Category objects — floating, mouse parallax and hover, each on its own transform layer
+ *   .category__object  position, size and design rotation (--r) from .category__item;
+ *                      mouse parallax on the separate `translate` property (script.js)
+ *   .category__float   floating: vertical on `transform`, sideways sway on `translate` +
+ *                      `rotate`, two loops of different lengths per object
+ *   .category__image   hover lift and scale on `translate` + `scale`
+ * Inline per object: --fy / --fx (px) and --fr (deg) = distance to each side of the rest
+ * position (the sign sets the direction), --fty / --ftx = full cycle, --fdy / --fdx = start
+ * offset, --fo = pivot, --px / --py = parallax depth (px).
+ * The turntable and perfume are cropped by the page edge, so they never move sideways and
+ * sway only slightly around the middle of the cut edge: no gap opens at the edge.
+ */
+.category {
+  --float-ease: cubic-bezier(0.37, 0, 0.63, 1);   /* ease-in-out (sine) */
+  --hover-ease: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.category__float,
+.category__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes category-float-y {
+  from { transform: translateY(calc(var(--fy) * -1px)); }
+  to   { transform: translateY(calc(var(--fy) * 1px)); }
+}
+
+@keyframes category-float-x {
+  from { translate: calc(var(--fx) * -1px) 0; rotate: calc(var(--fr) * -1deg); }
+  to   { translate: calc(var(--fx) * 1px) 0;  rotate: calc(var(--fr) * 1deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Each half cycle eases out and back in, so the loop has no visible turn or jump */
+  .category__float {
+    transform-origin: var(--fo, 50% 50%);
+    animation:
+      category-float-y calc(var(--fty) / 2) var(--float-ease) var(--fdy) infinite alternate,
+      category-float-x calc(var(--ftx) / 2) var(--float-ease) var(--fdx) infinite alternate;
+  }
+
+  /* Paused while the category is off screen (set by script.js) */
+  .category.is-offscreen .category__float {
+    animation-play-state: paused;
+  }
+}
+
+/* Hover: mouse / trackpad only. The hit area is an invisible layer in the object's resting
+   box, clipped to the outline of the artwork (--hit, traced from the image's alpha), so the
+   transparent part of one image never takes the hover from the object beneath it, and
+   lifting the image never moves it out from under the pointer. Stacking order is unchanged. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .category__object,
+  .category__float,
+  .category__image {
+    pointer-events: none;
+  }
+
+  .category__object::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    clip-path: var(--hit);
+    pointer-events: auto;
+  }
+
+  .category__image {
+    transition:
+      translate 400ms var(--hover-ease),
+      scale 400ms var(--hover-ease);
+  }
+
+  .category__object:hover .category__image {
+    translate: 0 -5px;
+    scale: 1.03;
+  }
+}
