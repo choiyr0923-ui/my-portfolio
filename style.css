@@ -586,3 +586,55 @@ html:not(.fonts-ready) .category__statement {
 .category__list .category__item {
   filter: brightness(0) invert(1);
 }
+
+/*
+ * About Me: circular cursor inversion — same circle and motion as the category (script.js).
+ * Shown over the whole page except the grey profile card. The circle (z-index 1) inverts what is
+ * beneath it: the white page and the typography (category labels, "Portfolio By Choi Yuri",
+ * Favorite Playlists and the playlist titles). Everything else sits above it (z-index 2) and keeps
+ * its colours: the circle graphic and its rotating rings, the playlist covers and play buttons,
+ * and the profile card with all of its contents. None of these overlap the typography.
+ */
+.about__graphic,
+.about__rings,
+.about__card,
+.about__profile .about__item,
+.about__intro,
+.about__contact .about__text,
+.about__resume .about__text,
+.about__resume .about__item,
+.about__player,
+.about__cover,
+.about__play {
+  z-index: 2;
+}
+
+.about__cursor {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .about__cursor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    display: block;
+    width: 90px;
+    height: 90px;
+    margin: -45px 0 0 -45px;
+    border-radius: 50%;
+    background: #ffffff;
+    mix-blend-mode: difference;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .about__cursor.is-visible {
+    visibility: visible;
+  }
+
+  .about.is-cursor-on .about__canvas {
+    cursor: none;
+  }
+}

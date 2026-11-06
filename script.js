@@ -145,23 +145,17 @@
   }).observe(section);
 })();
 
-// Category typography: circular cursor inversion. Pointer moves only store the position; one
-// requestAnimationFrame loop eases the circle toward it (slight lag), writes its transform and
-// stops once it has caught up. The circle shows only while the pointer is over the title,
-// tagline, lead, statement or a category label (their boxes, measured once and on resize).
-(function () {
-  var section = document.querySelector(".category");
-  var canvas = section && section.querySelector(".category__canvas");
-  var circle = canvas && canvas.querySelector(".category__cursor");
-  if (!circle) return;
-  var targets = Array.prototype.slice.call(canvas.querySelectorAll(
-    "h2 > .category__item, p > .category__item, .category__lead, .category__statement, .category__list .category__item"));
-
+// Circular cursor inversion (Category typography, About Me). Pointer moves only store the
+// position; one requestAnimationFrame loop eases the circle toward it (slight lag), writes its
+// transform and stops once it has caught up. Each page says where the circle may show:
+// inside any "include" box and outside every "exclude" box (boxes measured once and on resize).
+function circleCursor(section, canvas, circle, areas) {
   var finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   var FOLLOW_MS = 60;    // easing time constant: a slight lag, never sluggish
 
-  var boxes = [];
+  var include = [];
+  var exclude = [];
   var origin = [0, 0];   // canvas top-left in document px (changes only on resize)
   var scroll = [0, 0];   // page scroll, kept from the scroll event so no frame has to read layout
   var pointer = null;    // last pointer position in the viewport
@@ -176,12 +170,18 @@
 
   var measure = function () {
     var c = canvas.getBoundingClientRect();
-    scroll = [window.scrollX, window.scrollY];
-    origin = [c.left + scroll[0], c.top + scroll[1]];
-    boxes = targets.map(function (el) {
+    var box = function (el) {
       var r = el.getBoundingClientRect();
       return [r.left - c.left, r.top - c.top, r.right - c.left, r.bottom - c.top];
-    });
+    };
+    scroll = [window.scrollX, window.scrollY];
+    origin = [c.left + scroll[0], c.top + scroll[1]];
+    include = areas.include.map(box);
+    exclude = areas.exclude.map(box);
+  };
+
+  var inside = function (b, x, y) {
+    return x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3];
   };
 
   var place = function () {
@@ -199,7 +199,8 @@
     frame = 0;
     if (!pointer || !enabled()) { show(false); lastTime = 0; return; }
     var x = pointer[0] - origin[0] + scroll[0], y = pointer[1] - origin[1] + scroll[1];
-    var over = boxes.some(function (b) { return x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3]; });
+    var over = include.some(function (b) { return inside(b, x, y); }) &&
+               !exclude.some(function (b) { return inside(b, x, y); });
 
     if (over && !shown) {          // appear right under the pointer, not sliding in from elsewhere
       current[0] = x; current[1] = y; lastTime = 0;
@@ -228,7 +229,7 @@
     pointer = [event.clientX, event.clientY];
     request();
   }, { passive: true });
-  // While scrolling the page moves under a still pointer: re-check only while the category is on
+  // While scrolling the page moves under a still pointer: re-check only while the section is on
   // screen, so the Cover → Category wipe keeps running with no script work
   var onScreen = !("IntersectionObserver" in window);
   if (!onScreen) new IntersectionObserver(function (entries) {
@@ -249,4 +250,27 @@
 
   measure();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+}
+
+// Category: over the title, tagline, lead, statement and the four category labels
+(function () {
+  var section = document.querySelector(".category");
+  var canvas = section && section.querySelector(".category__canvas");
+  var circle = canvas && canvas.querySelector(".category__cursor");
+  if (!circle) return;
+  circleCursor(section, canvas, circle, {
+    include: Array.prototype.slice.call(canvas.querySelectorAll(
+      "h2 > .category__item, p > .category__item, .category__lead, .category__statement, .category__list .category__item")),
+    exclude: []
+  });
+})();
+
+// About Me: the whole page except the grey profile card
+(function () {
+  var section = document.querySelector(".about");
+  var canvas = section && section.querySelector(".about__canvas");
+  var circle = canvas && canvas.querySelector(".about__cursor");
+  var card = canvas && canvas.querySelector(".about__card");
+  if (!circle || !card) return;
+  circleCursor(section, canvas, circle, { include: [canvas], exclude: [card] });
 })();
