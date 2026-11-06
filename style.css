@@ -162,6 +162,15 @@ body {
   display: block;
 }
 
+/* Profile photo: about-profile.jpg (624 × 768) carries about 3px of white export padding on
+   its right edge; at the box's 302.19 / 768 scale the photo itself is 620px wide. Fitting
+   it by height from the left edge keeps the photo's own proportions in the same
+   243.95 × 302.19px box and leaves the padding outside it. */
+.about__profile > img {
+  object-fit: cover;
+  object-position: 0 50%;
+}
+
 /* Profile card: 815.151 × 628.163px, corner radius 11.539px */
 .about__card {
   position: absolute;
