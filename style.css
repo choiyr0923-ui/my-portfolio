@@ -523,3 +523,66 @@ html:not(.fonts-ready) .category__statement {
 @keyframes about-ring-ccw {
   to { transform: rotate(-360deg); }
 }
+
+/*
+ * Category typography: circular cursor inversion (mouse / trackpad only, not with reduced motion)
+ * Over the title, tagline, lead, statement and the four category labels a 90px white circle with
+ * mix-blend-mode: difference follows the pointer: inside it the white page turns black and the
+ * text turns white; outside it nothing changes. The blend stays inside the category's own
+ * stacking context (.category is position: relative; z-index: 1), so nothing outside the
+ * category is blended. The circle sits above the typography (z-index 1) and below the 3D objects
+ * (z-index 2), so the objects are drawn over it unchanged. No label overlaps an object (checked
+ * with the floating range), so lifting the objects above the labels changes nothing at rest.
+ * script.js moves the circle with transform and toggles .is-cursor-on / .is-visible.
+ */
+.category__object {
+  z-index: 2;
+}
+
+.category__cursor {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .category__cursor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    display: block;
+    width: 90px;
+    height: 90px;
+    margin: -45px 0 0 -45px;
+    border-radius: 50%;
+    background: #ffffff;
+    mix-blend-mode: difference;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .category__cursor.is-visible {
+    visibility: visible;
+  }
+
+  .category.is-cursor-on .category__canvas {
+    cursor: none;
+  }
+}
+
+/*
+ * Category black background (local comparison test — delete this block to go back to white)
+ * Background #000000 and text #FFFFFF. The title, tagline and labels are outlined text in SVG
+ * images (one colour, #000105), so they are shown white with a filter; the files are unchanged.
+ * The 3D objects are not touched. The circular cursor still uses difference, so over the black
+ * page it shows as a white circle with the text inside turned black.
+ */
+.category {
+  --color-category-bg: #000000;
+  --color-category-text: #ffffff;
+}
+
+.category__canvas h2 > .category__item,
+.category__canvas p > .category__item,
+.category__list .category__item {
+  filter: brightness(0) invert(1);
+}
