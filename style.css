@@ -289,3 +289,74 @@ html:not(.fonts-ready) .category__lead,
 html:not(.fonts-ready) .category__statement {
   visibility: hidden;
 }
+
+/*
+ * Cover → Category: Scroll Wipe Inversion (white cover → black → white category)
+ * .wipe is three screens tall and its stage (one screen, holding the cover) stays pinned
+ * for the first two:
+ *   screen 1 — the ink, which starts one screen down in .wipe, scrolls up over the pinned
+ *              cover, so its top edge rises from the bottom of the screen to the top;
+ *   screen 2 — the ink fills the screen and the category, pulled up by one screen, scrolls
+ *              in over it.
+ * Both moves are ordinary scrolling (no script, no per-frame style or paint work), so the
+ * edge stays locked to the scroll position on the browser's scrolling thread.
+ * The ink is white with mix-blend-mode: difference inside the isolated .wipe, so under its
+ * edge the white page turns black and the cover's black artwork turns white, exactly in
+ * place and without copying any cover element. The page colours themselves stay white.
+ */
+.wipe {
+  position: relative;
+  isolation: isolate;
+  height: 300svh;
+}
+
+.wipe__stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.wipe__ink {
+  position: absolute;
+  top: 100svh;
+  left: 0;
+  width: 100%;
+  height: 200svh;
+  background: #ffffff;
+  mix-blend-mode: difference;
+  pointer-events: none;
+}
+
+.wipe + .category {
+  margin-top: -100svh;
+}
+
+/* Category and About Me pass over the pinned stage */
+.category,
+.about {
+  position: relative;
+  z-index: 1;
+}
+
+.about {
+  background: var(--color-bg);
+}
+
+/* Reduced motion: no pinning or wipe, the pages simply follow each other as before */
+@media (prefers-reduced-motion: reduce) {
+  .wipe,
+  .wipe__stage {
+    position: static;
+    height: auto;
+  }
+
+  .wipe__ink {
+    display: none;
+  }
+
+  .wipe + .category {
+    margin-top: 0;
+  }
+}
